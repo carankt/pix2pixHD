@@ -32,6 +32,8 @@ def get_params(opt, size):
 
 def get_transform(opt, params, method=Image.BICUBIC, normalize=True):
     transform_list = []
+    #transform_list.append(transforms.Lambda(lambda img, cache: __up_scale_minmax(img, min=0, max=255)))   #check how to deal with cache
+    
     if 'resize' in opt.resize_or_crop:
         osize = [opt.loadSize, opt.loadSize]
         transform_list.append(transforms.Scale(osize, method))   
@@ -88,3 +90,7 @@ def __flip(img, flip):
     if flip:
         return img.transpose(Image.FLIP_LEFT_RIGHT)
     return img
+
+
+
+
