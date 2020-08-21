@@ -10,7 +10,7 @@ import os
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
-    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.tiff'
+    '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP', '.tiff', '.npy'
 ]
 
 
@@ -32,7 +32,7 @@ def make_dataset(dir):
 
 
 def default_loader(path):
-    return Image.open(path).convert('RGB')
+    return Image.open(path).convert('L')
 
 
 class ImageFolder(data.Dataset):
