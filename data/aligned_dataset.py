@@ -18,7 +18,7 @@ class AlignedDataset(BaseDataset):
         if opt.isTrain or opt.use_encoded_image:
             dir_B = '_B' if self.opt.label_nc == 0 else '_img'
             self.dir_B = os.path.join(opt.dataroot, opt.phase + dir_B)  
-            self.B_paths = sorted(make_dataset(self.dir_B))  ##get a list of file path for each .npy files
+            self.B_paths = makedataset_B(self.A_paths)      #sorted(make_dataset(self.dir_B))  get a list of file path for each .npy files as per the files in B
 
         ### instance maps
         if not opt.no_instance:
@@ -31,7 +31,8 @@ class AlignedDataset(BaseDataset):
             print('----------- loading features from %s ----------' % self.dir_feat)
             self.feat_paths = sorted(make_dataset(self.dir_feat))
 
-        self.dataset_size = len(self.A_paths) 
+        self.dataset_size = len(self.A_paths)
+        assert(len(self.A_paths) == len(self.B_paths))
       
     def __getitem__(self, index):        
         ### input A (label maps)
@@ -93,3 +94,11 @@ def down_scale_minmax(X, cache):
     X_std = (X - min)/(max-min)
     X = (X_max - X_min*X_std + X_min)
     return X
+
+def makedataset_B(Apaths):
+    Bpaths = []
+    for j in range(0,len(Apaths)):
+        Bpaths.append(Apaths[j].replace('_A', '_B'))
+    return Bpaths
+        
+        
