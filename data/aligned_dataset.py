@@ -2,6 +2,7 @@ import os.path
 from data.base_dataset import BaseDataset, get_params, get_transform, normalize
 from data.image_folder import make_dataset
 from PIL import Image
+import numpy as np
 
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
@@ -35,11 +36,12 @@ class AlignedDataset(BaseDataset):
     def __getitem__(self, index):        
         ### input A (label maps)
         A_path = self.A_paths[index]              
-        A = Image.open(A_path)        
+        A = np.load(A_path)      #Image.open(A_path)        
         params = get_params(self.opt, A.size)
         if self.opt.label_nc == 0:
             transform_A = get_transform(self.opt, params)
-            A_tensor = transform_A(A.convert('RGB'))
+            A_tensor = transform_A(A)  #.convert('RGB'))
+            A, A_cache = up_scale_minmax(A)
         else:
             transform_A = get_transform(self.opt, params, method=Image.NEAREST, normalize=False)
             A_tensor = transform_A(A) * 255.0
@@ -48,7 +50,8 @@ class AlignedDataset(BaseDataset):
         ### input B (real images)
         if self.opt.isTrain or self.opt.use_encoded_image:
             B_path = self.B_paths[index]   
-            B = Image.open(B_path).convert('RGB')
+            B = np.load(B_path) #Image.open(B_path).convert('RGB')
+            B, B_cache = up_scale_minmax(B)
             transform_B = get_transform(self.opt, params)      
             B_tensor = transform_B(B)
 
@@ -65,7 +68,7 @@ class AlignedDataset(BaseDataset):
                 feat_tensor = norm(transform_A(feat))                            
 
         input_dict = {'label': A_tensor, 'inst': inst_tensor, 'image': B_tensor, 
-                      'feat': feat_tensor, 'path': A_path}
+                      'feat': feat_tensor, 'path': A_path, 'A_cache': A_cache , 'B_cache': B_cache }
 
         return input_dict
 
@@ -74,3 +77,18 @@ class AlignedDataset(BaseDataset):
 
     def name(self):
         return 'AlignedDataset'
+    
+def up_scale_minmax(X, min=0, max=255):
+    X_std = (X - X.min()) / (X.max() - X.min())
+    X_scaled = X_std * (max - min) + min
+    cache = (X.min(), X.max(), min, max)
+    X_scaled = X_scaled.astype("uint8")
+    X_scaled = np.flip(q_synt, axis=0)
+    X_quant = X_scaled.copy()
+    return X_quant, cache
+
+def down_scale_minmax(X, cache):
+    X_min, X_max, min, max = cache
+    X_std = (X - min)/(max-min)
+    X = (X_max - X_min*X_std + X_min)
+    return X
